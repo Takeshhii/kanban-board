@@ -1,119 +1,122 @@
-Проект «Канбан-доска»
-Макет - https://www.figma.com/file/gmwg0Me1T6szwVqd7KSYL6/Kanban?node-id=0%3A1
-Функциональные требования
+# Kanban Board
 
-Исходная Канбан-доска должна иметь 4 блока с задачами:
+React task board with four workflow columns, per-task detail pages and
+persistence to `localStorage`.
 
-    1.Backlog (задачи, которые требуют уточнения перед тем, как брать их в работу);
-    2.Ready (задачи, которые могут быть взяты в работу);
-    3.In progress (задачи, которые уже в работе);
-    4.Finished (законченные задачи).
+*Educational project (2023). Kept public as part of my learning trajectory —
+this was the project where component decomposition and lifted state finally
+made sense to me.*
 
-Требования к React
+## Problem
 
-        Интерфейс должен быть поделен на компоненты. Перед началом работы хорошенько обдумайте, какие компоненты вы будете использовать. Деление на компоненты должно быть логичным и оправданным.
-        После того как определитесь с делением на компоненты, подумайте о том, как верно организовать файловую структуру.
-        Следуйте принципам модульности (используйте export, import).
-        Возможно использование как классовых компонентов, так и функциональных.
-        Используйте Synthetic events для работы с событиями.
-        Для вывода разного состояния элементов в зависимости от действий пользователя (пример: раскрытое/свернутое меню пользователя) используйте условный рендеринг.
-        Для реализации отдельных страниц для каждой задачи и перехода между страницами используйте библиотеку react-router. 
-        При написании кода старайтесь следовать принципам KISS (Keep It Short and Simple — не усложняй) и DRY (Don’t Repeat Yourself — не повторяйся).
+Build a working Kanban board from a Figma spec: tasks move through four stages,
+each task has its own page, and nothing should be lost when the page reloads.
 
-Требования к верстке и CSS
+## Solution
 
-        Вёрстка должна соответствовать макету. Добиваться «pixel-perfect» соответствия не обязательно, но основные моменты должны быть соблюдены: цветовая гамма, шрифты, размеры, отступы.
-        Приложение должно корректно отображаться и на мобильных устройствах. Дизайн для мобильной версии вы можете найти в макете.
-        Соблюдайте семантическую вёрстку. В приложении должны присутствовать разделы <header>, <main> и <footer>. Кнопки должна быть реализованы элементом <button>, элементы дропдауна — списком <select> и так далее.
-        При наведении курсора на любые кликабельные элементы должен появляться cursor: pointer.
-        Учитывайте состояния кнопки «+ Add card» — активная и неактивная.
+A React SPA where all task state lives in one place at the top of the tree and
+flows down to the columns. Any change writes through to `localStorage`, so the
+board survives a refresh without a backend.
 
-        → Если кнопка активна, её внешний вид должен соответствовать макету. При наведении она должна подсвечиваться (менять цвет), а курсор должен меняться на pointer.
+## Key features
 
-        → Если кнопка неактивна (назначен атрибут disabled), её цвет должен отличаться от активного состояния, кнопка не должна реагировать на наведение курсора (цвет остаётся таким же, не появляется курсор pointer).
-        Можете использовать любой вариант подключения стилей на ваше усмотрение: общий файл стилей проекта, CSS-модули или специальные React-библиотеки для стилизации компонентов (например, Styled Components). 
-        Использовать селекторы по тегу и id для задания стилей нельзя. Используйте классы. 
+- **Four workflow columns** — Backlog, Ready, In Progress, Finished — with tasks
+  moving between them.
+- **Per-task pages** — each task has a real URL (`/tasks/:taskId`) via React
+  Router, so a task can be linked to and opened directly.
+- **Persistence without a backend** — the task list is read from `localStorage` on
+  mount and written back through a `useEffect` on every change.
+- **Component decomposition** — board, list, task detail, forms, dropdown, header
+  and footer are separate modules rather than one large file.
 
-Прочие требования
+## Architecture
 
-        Пишите код аккуратно, с соблюдением форматирования и отступов.
-        Старайтесь давать компонентам, переменным и функциям осмысленные имена.
-        Старайтесь использовать современный ES6 синтаксис: стрелочные функции, декомпозиция, spread и т.д.
-        При размещении проекта на GitHub не забывайте добавить папку node_modules в файл .gitignore, чтобы она не попала в ваш репозиторий. О том, как настроить .gitignore и почему папки node_modules не должно быть в репозитории, можете прочитать в этой статье.
+```
+App.js                    owns task state, syncs it to localStorage
+components/
+  main/                   routing: board (/) and task detail (/tasks/:taskId)
+  board/                  the four-column layout
+  list/                   one column and its task links
+  tasks-detail/           single task page
+  forms/                  add-new-task form
+  dropdown/               status/selection control
+  header/ footer/         layout, task counters
+```
 
-Подсказка: На начальном этапе (до подключения localStorage) можно использовать заглушку (mock) — объект с необходимыми данными, например:
+State is deliberately lifted to `App.js` rather than scattered — the columns are
+presentational and receive `tasks` / `setTasks` as props.
 
-const dataMock = [
-   {
-        title: 'backlog',
-        issues: [
-            {
-                id: '12345',
-                name: 'Sprint bugfix',
-	    description: ‘Fix all the bugs’
-            }
-        ]
-   },
-   // и так далее
-]
+## Tech stack
 
--------------------------------------------------------------------------------------
+React 18 · React Router 6 · `localStorage` · CSS per component
 
-Kanban Board Project
-Layout - https://www.figma.com/file/gmwg0Me1T6szwVqd7KSYL6/Kanban?node-id=0%3A1
-Functional requirements
+## How it works
 
-The original Kanban board should have 4 blocks with tasks:
+```bash
+npm install
+npm start      # http://localhost:3000
+npm run build
+```
 
-    1.Backlog (tasks that need clarification before taking them to work);
-    2.Ready (tasks that can be taken to work);
-    3.In progress (tasks that are already in progress);
-    4.Finished (completed tasks).
+## My role
 
-React Requirements
+Built the entire application from the Figma spec — component structure, state
+model, routing and styling.
 
-        The interface should be divided into components. Before starting work, think carefully about which components you will use. The division into components should be logical and justified.
-        After you decide on the division into components, think about how to organize the file structure correctly.
-        Follow the principles of modularity (use export, import).
-        It is possible to use both class components and functional ones.
-        Use Synthetic events to work with events.
-        To display different states of elements depending on user actions (example: expanded/collapsed user menu), use conditional rendering.
-        To implement separate pages for each task and navigate between pages, use the react-router library. 
-        When writing code, try to follow the principles of KISS (Keep It Short and Simple — don't complicate it) and DRY (Don't Repeat Yourself — don't repeat yourself).
+## Challenges / lessons
 
-Layout and CSS requirements
+The real lesson here was deciding *where state should live*. My first attempt
+kept task data inside individual column components, which made moving a task
+between columns awkward. Lifting everything to `App.js` and passing setters down
+made the data flow obvious — and made the `localStorage` sync a single
+`useEffect` instead of scattered writes.
 
-        The layout must match the layout. It is not necessary to achieve "pixel-perfect" compliance, but the main points must be observed: colors, fonts, sizes, margins.
-        The application must be displayed correctly on mobile devices as well. You can find the design for the mobile version in the layout.
-        Observe the semantic layout. The application must have sections <header>, <main> and <footer>. Buttons should be implemented by the <button> element, dropdown elements by the <select> list, and so on.
-        Cursor: pointer should appear when hovering the cursor over any clickable elements.
-        Take into account the states of the "+ Add card" button — active and inactive.
+## Status
 
-        → If the button is active, its appearance must match the layout. When hovering, it should be highlighted (change color), and the cursor should change to pointer.
+Archived — educational project, completed 2023. Not in active development.
 
-        → If the button is inactive (the disabled attribute is assigned), its color should differ from the active state, the button should not react to the cursor hover (the color remains the same, the pointer cursor does not appear).
-        You can use any style connection option at your discretion: a common project style file, CSS modules or special React libraries for styling components (for example, Styled Components). 
-        You cannot use selectors by tag and id to set styles. Use classes. 
+---
 
-Other requirements
+## Русская версия
 
-        Write the code carefully, observing formatting and indentation.
-        Try to give components, variables, and functions meaningful names.
-        Try to use modern ES6 syntax: arrow functions, decomposition, spread, etc.
-        When hosting a project on GitHub , do not forget to add the node_modules folder to the file .gitignore, so that it doesn't end up in your repository. About how to configure .gitignore and why the node_modules folder should not be in the repository, you can read in this article.
+**Что это:** доска задач на React с четырьмя колонками рабочего процесса,
+отдельными страницами задач и сохранением в `localStorage`.
 
-Hint: At the initial stage (before connecting localStorage), you can use a stub (mock) — an object with the necessary data, for example:
+*Учебный проект (2023). Оставлен публичным как часть траектории обучения —
+именно на нём я окончательно понял декомпозицию на компоненты и подъём
+состояния.*
 
-const dataMock = [
-   {
-        title: 'backlog',
-        issues: [
-            {
-                id: '12345',
-                name: 'Sprint bugfix',
-	    description: ‘Fix all the bugs’
-            }
-        ]
-   },
-   // и так далее
-]
+**Задача:** собрать рабочую канбан-доску по макету из Figma: задачи проходят
+четыре стадии, у каждой задачи своя страница, и ничего не должно теряться при
+перезагрузке страницы.
+
+**Решение:** SPA на React, где всё состояние задач живёт в одном месте наверху
+дерева и спускается вниз в колонки. Любое изменение записывается в
+`localStorage`, поэтому доска переживает обновление страницы без бэкенда.
+
+**Ключевое:**
+
+- **Четыре колонки** — Backlog, Ready, In Progress, Finished — с перемещением
+  задач между ними.
+- **Страницы задач** — у каждой задачи настоящий URL (`/tasks/:taskId`) через
+  React Router, на задачу можно дать ссылку и открыть напрямую.
+- **Сохранение без бэкенда** — список задач читается из `localStorage` при
+  монтировании и записывается обратно через `useEffect` при каждом изменении.
+- **Декомпозиция на компоненты** — доска, колонка, детальная страница задачи,
+  формы, дропдаун, шапка и футер вынесены в отдельные модули, а не свалены в
+  один файл.
+
+**Стек:** React 18 · React Router 6 · `localStorage` · CSS на компонент.
+
+**Запуск:** `npm install` → `npm start` (http://localhost:3000).
+
+**Моя роль:** всё приложение по макету Figma — структура компонентов, модель
+состояния, роутинг и стили.
+
+**Что было сложным:** главный урок здесь — понять, *где должно жить состояние*.
+В первой версии данные задач лежали внутри самих колонок, из-за чего перенос
+задачи между колонками получался неуклюжим. Подъём всего состояния в `App.js`
+и передача сеттеров вниз сделали поток данных очевидным — и превратили
+синхронизацию с `localStorage` в один `useEffect` вместо разбросанных записей.
+
+**Статус:** архив — учебный проект, завершён в 2023, не развивается.
